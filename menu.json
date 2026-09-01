@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-30",
+  "updatedAt": "2026-09-01",
   "items": [
     {
       "id": "idli-sambhar",
@@ -7,25 +7,6 @@
       "desc": "Soft steamed idlis served with hot sambhar & chutney",
       "type": "veg",
       "image": "images/idli-sambhar.jpg",
-      "available": true,
-      "tag": "",
-      "variants": [
-        {
-          "label": "Half Plate",
-          "price": 60
-        },
-        {
-          "label": "Full Plate",
-          "price": 120
-        }
-      ]
-    },
-    {
-      "id": "dahi-vada",
-      "name": "Dahi Vada",
-      "desc": "Soft lentil dumplings soaked in sweet & spicy curd",
-      "type": "veg",
-      "image": "images/dahi-vada.jpg",
       "available": true,
       "tag": "",
       "variants": [
@@ -55,6 +36,25 @@
         {
           "label": "Full Plate",
           "price": 100
+        }
+      ]
+    },
+    {
+      "id": "dahi-vada",
+      "name": "Dahi Vada",
+      "desc": "Soft lentil dumplings soaked in sweet & spicy curd",
+      "type": "veg",
+      "image": "images/dahi-vada.jpg",
+      "available": true,
+      "tag": "",
+      "variants": [
+        {
+          "label": "Half Plate",
+          "price": 60
+        },
+        {
+          "label": "Full Plate",
+          "price": 120
         }
       ]
     },
