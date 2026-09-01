@@ -14,78 +14,94 @@
 <link rel="stylesheet" href="admin.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c39a45'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='19' font-weight='700' fill='%231f4d38' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
 </head>
-<body>
+<body x-data="adminApp">
 
-<!-- ================================================ gate screen -->
-<section id="gate" class="wrap gate">
+<!-- ================================================ gate -->
+<section class="wrap gate" x-show="screen !== 'app'" x-cloak>
 
-  <!-- ---- checking which state we are in ---- -->
-  <div class="panel" id="paneBoot">
+  <!-- ---- still working out which state we are in ---- -->
+  <div class="panel" x-show="screen === 'boot'">
     <h1>Manage Menu</h1>
-    <p class="lede">Checking…</p>
-    <div class="msg" id="bootMsg"></div>
-    <p class="hint" id="buildStamp" style="margin-top:18px">
-      Loading scripts… if this line does not change, your browser is holding an old
-      copy of the page — reload with <b>Ctrl&nbsp;+&nbsp;Shift&nbsp;+&nbsp;R</b>.
-    </p>
+    <p class="lede" x-show="!bootError">Checking…</p>
+    <div class="msg show error" x-show="bootError">
+      <b>Setup needed.</b> <span x-text="bootError"></span>
+    </div>
   </div>
 
-  <!-- ---- normal sign in: password only ---- -->
-  <div class="panel" id="paneUnlock" hidden>
+  <!-- ---- normal sign in ---- -->
+  <div class="panel" x-show="screen === 'unlock'">
     <h1>Manage Menu</h1>
     <p class="lede">Enter your password to add, edit or remove dishes.</p>
 
     <div class="field">
       <label for="pw">Password</label>
-      <input id="pw" type="password" placeholder="Your password" autocomplete="current-password" spellcheck="false">
+      <input id="pw" type="password" x-model="password" @keydown.enter="unlock()"
+             placeholder="Your password" autocomplete="current-password" spellcheck="false">
     </div>
 
     <label class="switch" style="margin-top:14px">
-      <input type="checkbox" id="remember" checked>
+      <input type="checkbox" x-model="remember">
       <span class="track"></span>
       Stay signed in on this device
     </label>
 
-    <button class="abtn primary wide" id="unlock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Unlock</button>
+    <button class="abtn primary wide" @click="unlock()" :disabled="unlocking">
+      <template x-if="!unlocking">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </template>
+      <template x-if="unlocking">
+        <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
+      </template>
+      <span x-text="unlocking ? 'Unlocking…' : 'Unlock'">Unlock</span>
+    </button>
 
-    <div class="msg" id="gateMsg"></div>
+    <div class="msg" :class="gateMsg && 'show ' + gateMsg.kind" x-show="gateMsg">
+      <span x-html="gateMsg?.text"></span>
+    </div>
 
     <p class="hint" style="margin-top:20px">
-      <a class="help" href="#" id="forgot">Forgot your password?</a>
+      <a class="help" href="#" @click.prevent="startRecovery()">Forgot your password?</a>
     </p>
   </div>
 
-  <!-- ---- first-time setup, and password recovery ---- -->
-  <div class="panel" id="paneSetup" hidden>
-    <h1 id="setupTitle">Choose a password</h1>
-    <p class="lede" id="setupLede">
-      This is the one and only time you need a GitHub token. It gets locked with your
-      password and stored in your repository, so from now on you only type the password.
-    </p>
+  <!-- ---- first run, and password recovery ---- -->
+  <div class="panel" x-show="screen === 'setup'">
+    <h1 x-text="setupTitle">Choose a password</h1>
+    <p class="lede" x-text="setupLede"></p>
 
     <div class="field">
       <label for="s-newpw">Password</label>
-      <input id="s-newpw" type="password" placeholder="At least 10 characters" autocomplete="new-password" spellcheck="false">
+      <input id="s-newpw" type="password" x-model="setupPw"
+             placeholder="At least 10 characters" autocomplete="new-password" spellcheck="false">
       <p class="hint">Make it long. Short passwords can be cracked — see the note below.</p>
     </div>
 
     <div class="field">
       <label for="s-newpw2">Repeat password</label>
-      <input id="s-newpw2" type="password" placeholder="Type it again" autocomplete="new-password" spellcheck="false">
+      <input id="s-newpw2" type="password" x-model="setupPw2"
+             placeholder="Type it again" autocomplete="new-password" spellcheck="false">
     </div>
 
     <div class="field">
       <label for="s-token">GitHub token</label>
-      <input id="s-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+      <input id="s-token" type="password" x-model="setupToken" @keydown.enter="runSetup()"
+             placeholder="github_pat_…" autocomplete="off" spellcheck="false">
       <p class="hint">Needed once. You will not be asked for it again.</p>
     </div>
 
-    <button class="abtn primary wide" id="setupGo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span id="setupGoLabel">Set password</span></button>
+    <button class="abtn primary wide" @click="runSetup()" :disabled="savingSetup">
+      <template x-if="savingSetup">
+        <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
+      </template>
+      <span x-text="savingSetup ? 'Saving…' : (recovery ? 'Reset password' : 'Set password')">Set password</span>
+    </button>
 
-    <div class="msg" id="setupMsg"></div>
+    <div class="msg" :class="setupMsg && 'show ' + setupMsg.kind" x-show="setupMsg">
+      <span x-html="setupMsg?.text"></span>
+    </div>
 
-    <p class="hint" style="margin-top:18px" id="backToUnlockWrap" hidden>
-      <a class="help" href="#" id="backToUnlock">← Back to sign in</a>
+    <p class="hint" style="margin-top:18px" x-show="recovery">
+      <a class="help" href="#" @click.prevent="backToUnlock()">← Back to sign in</a>
     </p>
 
     <details style="margin-top:22px">
@@ -112,21 +128,24 @@
   </div>
 </section>
 
-<!-- ================================================ admin app -->
-<div id="app" hidden>
+<!-- ================================================ app -->
+<div x-show="screen === 'app'" x-cloak>
 
   <header class="admin-header">
     <div class="wrap">
-      <div class="title">Menu Manager<small id="repoLabel">—</small></div>
+      <div class="title">Menu Manager<small x-text="repoSlug">—</small></div>
+
       <a class="abtn ghost-light" href="index.html" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         View site
       </a>
-      <button class="abtn ghost-light" id="openSettings">
+
+      <button class="abtn ghost-light" @click="openSettings()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Password
       </button>
-      <button class="abtn ghost-light" id="signOut">
+
+      <button class="abtn ghost-light" @click="signOut()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
         Sign out
       </button>
@@ -137,38 +156,98 @@
     <div class="wrap">
       <div class="toolbar">
         <h2>Dishes</h2>
-        <span class="count" id="itemCount">0 items</span>
-        <button class="abtn primary" id="addItem">
+        <span class="count" x-text="itemCountLabel">0 items</span>
+        <button class="abtn primary" @click="openEdit(null)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           Add dish
         </button>
       </div>
 
-      <div class="msg" id="appMsg"></div>
-      <div class="rows" id="rows"></div>
+      <div class="msg" :class="appMsg && 'show ' + appMsg.kind" x-show="appMsg">
+        <span x-html="appMsg?.text"></span>
+      </div>
+
+      <div class="rows">
+        <template x-if="items.length === 0">
+          <div class="empty">
+            <h3>No dishes yet</h3>
+            <p>Click <b>Add dish</b> to create your first menu item.</p>
+          </div>
+        </template>
+
+        <template x-for="(item, index) in items" :key="item.id + ':' + index">
+          <div class="row" :class="item.available === false && 'off'">
+            <div class="thumb">
+              <template x-if="item.image">
+                <img :src="item.image" alt="" @error="$event.target.remove()">
+              </template>
+              <template x-if="!item.image">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg>
+              </template>
+            </div>
+
+            <div class="meta">
+              <div class="nm">
+                <template x-if="item.type === 'veg'">
+                  <svg class="emblem" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="#fff" stroke="#1f7a3d" stroke-width="2"/><circle cx="10" cy="10" r="4.6" fill="#1f7a3d"/></svg>
+                </template>
+                <template x-if="item.type !== 'veg'">
+                  <svg class="emblem" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="#fff" stroke="#8f2029" stroke-width="2"/><path d="M10 5.2 14.6 14H5.4z" fill="#8f2029"/></svg>
+                </template>
+                <span x-text="item.name"></span>
+                <template x-if="item.available === false">
+                  <span class="badge-off">Sold out</span>
+                </template>
+              </div>
+              <div class="vr" x-text="variantSummary(item) || 'No price set'"></div>
+            </div>
+
+            <div class="acts">
+              <button class="iconbtn up" @click="move(index, -1)" :disabled="index === 0" title="Move up" aria-label="Move up">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </button>
+              <button class="iconbtn down" @click="move(index, 1)" :disabled="index === items.length - 1" title="Move down" aria-label="Move down">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+              </button>
+              <button class="iconbtn edit" @click="openEdit(index)" title="Edit" aria-label="Edit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </button>
+              <button class="iconbtn del" @click="remove(index)" title="Delete" aria-label="Delete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
     </div>
   </main>
 
-  <div class="publish-bar" id="publishBar">
+  <div class="publish-bar" :class="dirty && 'show'">
     <div class="wrap">
       <span class="dirty-dot"></span>
-      <span class="txt">Unpublished changes<small id="dirtyDetail">Your edits are not live yet.</small></span>
-      <button class="abtn" id="discard">Discard</button>
-      <button class="abtn primary" id="publish">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-        Publish
+      <span class="txt">Unpublished changes<small>Your edits are not live yet.</small></span>
+      <button class="abtn" @click="discard()">Discard</button>
+      <button class="abtn primary" @click="publish()" :disabled="publishing">
+        <template x-if="!publishing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </template>
+        <template x-if="publishing">
+          <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
+        </template>
+        <span x-text="publishing ? 'Publishing…' : 'Publish'">Publish</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- ================================================ edit modal -->
-<div class="modal-scrim" id="modalScrim"></div>
+<!-- ================================================ edit sheet -->
+<div class="modal-scrim" :class="modalOpen && 'open'" @click="closeEdit()"></div>
 
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+<div class="modal" :class="modalOpen && 'open'" role="dialog" aria-modal="true"
+     :aria-hidden="!modalOpen" @keydown.escape.window="modalOpen && closeEdit()">
   <div class="modal-head">
-    <h2 id="modalTitle">Add Dish</h2>
-    <button class="icon-btn" id="modalClose" aria-label="Close">
+    <h2 x-text="editingIndex === null ? 'Add Dish' : 'Edit Dish'">Add Dish</h2>
+    <button class="icon-btn" @click="closeEdit()" aria-label="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
     </button>
   </div>
@@ -176,86 +255,96 @@
   <div class="modal-body stack">
     <div class="field">
       <label for="m-name">Dish name</label>
-      <input id="m-name" type="text" placeholder="e.g. Idli Sambhar">
+      <input id="m-name" type="text" x-model="draft.name" placeholder="e.g. Idli Sambhar">
     </div>
 
     <div class="field">
       <label for="m-desc">Short description</label>
-      <textarea id="m-desc" placeholder="Soft steamed idlis served with hot sambhar &amp; chutney"></textarea>
+      <textarea id="m-desc" x-model="draft.desc" placeholder="Soft steamed idlis served with hot sambhar &amp; chutney"></textarea>
     </div>
 
-    <div>
-      <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:650;color:var(--ink-soft)">Type</label>
-      <div class="seg" id="m-type">
-        <label data-for="veg">
-          <input type="radio" name="mtype" value="veg" checked>
+    <div class="field">
+      <label>Type</label>
+      <div class="seg">
+        <label data-for="veg" :class="draft.type === 'veg' && 'on'">
+          <input type="radio" value="veg" x-model="draft.type">
           <svg class="emblem" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="#fff" stroke="#1f7a3d" stroke-width="2"/><circle cx="10" cy="10" r="4.6" fill="#1f7a3d"/></svg>
           Veg
         </label>
-        <label data-for="nonveg">
-          <input type="radio" name="mtype" value="nonveg">
+        <label data-for="nonveg" :class="draft.type === 'nonveg' && 'on'">
+          <input type="radio" value="nonveg" x-model="draft.type">
           <svg class="emblem" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="#fff" stroke="#8f2029" stroke-width="2"/><path d="M10 5.2 14.6 14H5.4z" fill="#8f2029"/></svg>
           Non-Veg
         </label>
       </div>
     </div>
 
-    <div>
-      <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:650;color:var(--ink-soft)">Portions &amp; prices</label>
-      <div id="m-variants"></div>
-      <button class="abtn" id="addVariant" style="height:34px;font-size:12.5px">
+    <div class="field">
+      <label>Portions &amp; prices</label>
+      <div>
+        <template x-for="(variant, vi) in draft.variants" :key="vi">
+          <div class="vrow">
+            <input class="vlabel" type="text" x-model="variant.label" placeholder="Portion (e.g. Full Plate)">
+            <input class="vprice" type="number" inputmode="numeric" min="0" step="1" x-model="variant.price" placeholder="Price">
+            <button class="iconbtn del" @click="removeVariant(vi)" title="Remove portion" aria-label="Remove portion">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+            </button>
+          </div>
+        </template>
+      </div>
+      <button class="abtn" @click="addVariant()" style="height:34px;font-size:12.5px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         Add portion
       </button>
       <p class="hint">e.g. “Half Plate — 60” and “Full Plate — 120”. One portion is fine too.</p>
     </div>
 
-    <div>
-      <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:650;color:var(--ink-soft)">Photo</label>
+    <div class="field">
+      <label>Photo</label>
       <div class="imgpick">
-        <div class="prev" id="m-prev">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg>
+        <div class="prev">
+          <template x-if="draftPreview">
+            <img :src="draftPreview" alt="">
+          </template>
+          <template x-if="!draftPreview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg>
+          </template>
         </div>
         <div class="side">
-          <input type="file" id="m-file" accept="image/*" style="display:none">
-          <button class="abtn" id="pickImage" style="height:36px;font-size:13px">Choose photo…</button>
-          <button class="abtn danger" id="clearImage" style="height:36px;font-size:13px;margin-left:6px" hidden>Remove</button>
-          <p id="imgStatus">Optional. Resized automatically before upload.</p>
+          <input type="file" x-ref="file" accept="image/*" style="display:none" @change="handleFile($event)">
+          <button class="abtn" @click="$refs.file.click()" :disabled="uploading" style="height:36px;font-size:13px">Choose photo…</button>
+          <button class="abtn danger" @click="clearImage()" x-show="draftPreview" style="height:36px;font-size:13px;margin-left:6px">Remove</button>
+          <p x-text="imageStatus">Optional. Resized automatically before upload.</p>
         </div>
       </div>
     </div>
 
     <div class="field">
-      <label for="m-tag">Ribbon label (optional)</label>
-      <input id="m-tag" type="text" placeholder="e.g. Festive Delight, Bestseller">
+      <label for="m-tag">Ribbon (optional)</label>
+      <input id="m-tag" type="text" x-model="draft.tag" placeholder="e.g. Festive Delight, Bestseller">
     </div>
 
     <label class="switch">
-      <input type="checkbox" id="m-available" checked>
+      <input type="checkbox" x-model="draft.available">
       <span class="track"></span>
       Available to order
-      <small>Turn off to show “Sold Out”</small>
     </label>
   </div>
 
   <div class="modal-foot">
-    <button class="abtn" id="modalCancel">Cancel</button>
-    <button class="abtn primary" id="modalSave">Save dish</button>
+    <button class="abtn" @click="closeEdit()">Cancel</button>
+    <button class="abtn primary" @click="saveDraft()">Save dish</button>
   </div>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-  <span id="toastMsg">Saved</span>
-</div>
+<!-- ================================================ password panel -->
+<div class="modal-scrim" :class="settingsOpen && 'open'" @click="closeSettings()"></div>
 
-<!-- ================================================ password / access modal -->
-<div class="modal-scrim" id="setScrim"></div>
-
-<div class="modal" id="setModal" role="dialog" aria-modal="true" aria-labelledby="setTitle" aria-hidden="true">
+<div class="modal" :class="settingsOpen && 'open'" role="dialog" aria-modal="true"
+     :aria-hidden="!settingsOpen" @keydown.escape.window="settingsOpen && closeSettings()">
   <div class="modal-head">
-    <h2 id="setTitle">Password &amp; access</h2>
-    <button class="icon-btn" id="setClose" aria-label="Close">
+    <h2>Password &amp; access</h2>
+    <button class="icon-btn" @click="closeSettings()" aria-label="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
     </button>
   </div>
@@ -263,13 +352,15 @@
   <div class="modal-body stack">
     <div class="field">
       <label for="c-pw1">New password</label>
-      <input id="c-pw1" type="password" placeholder="At least 10 characters" autocomplete="new-password" spellcheck="false">
+      <input id="c-pw1" type="password" x-model="cPw1" placeholder="At least 10 characters"
+             autocomplete="new-password" spellcheck="false">
       <p class="hint">Leave both boxes empty if you only want to replace the GitHub token.</p>
     </div>
 
     <div class="field">
       <label for="c-pw2">Repeat new password</label>
-      <input id="c-pw2" type="password" placeholder="Type it again" autocomplete="new-password" spellcheck="false">
+      <input id="c-pw2" type="password" x-model="cPw2" placeholder="Type it again"
+             autocomplete="new-password" spellcheck="false">
     </div>
 
     <details>
@@ -280,20 +371,37 @@
       </p>
       <div class="field">
         <label for="c-token">New GitHub token</label>
-        <input id="c-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+        <input id="c-token" type="password" x-model="cToken" placeholder="github_pat_…"
+               autocomplete="off" spellcheck="false">
       </div>
     </details>
 
-    <div class="msg" id="setMsg"></div>
+    <div class="msg" :class="setMsg && 'show ' + setMsg.kind" x-show="setMsg">
+      <span x-html="setMsg?.text"></span>
+    </div>
   </div>
 
   <div class="modal-foot">
-    <button class="abtn" id="setCancel">Cancel</button>
-    <button class="abtn primary" id="setSave">Save</button>
+    <button class="abtn" @click="closeSettings()">Cancel</button>
+    <button class="abtn primary" @click="saveSettings()" :disabled="savingSettings">
+      <span x-text="savingSettings ? 'Saving…' : 'Save'">Save</span>
+    </button>
   </div>
 </div>
 
-<script defer src="config.js?v=b7"></script>
-<script defer src="admin.js?v=b7"></script>
+<!-- ================================================ toast -->
+<div class="toast" :class="toastVisible && 'show'" role="status" aria-live="polite">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+  <span x-text="toastText">Saved</span>
+</div>
+
+<script type="module">
+  import Alpine from "./vendor/alpine.esm.js";
+  import { adminApp } from "./js/admin.js";
+
+  Alpine.data("adminApp", adminApp);
+  window.Alpine = Alpine;
+  Alpine.start();
+</script>
 </body>
 </html>

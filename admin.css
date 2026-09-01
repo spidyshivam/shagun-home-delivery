@@ -376,3 +376,5 @@
 .gate details p.hint{ line-height: 1.55; }
 
 [hidden]{ display: none !important; }
+
+[x-cloak]{ display: none !important; }

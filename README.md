@@ -7,16 +7,31 @@ reach you over WhatsApp or a phone call.
 No server, no database, no cart, no build step, no hosting cost.
 
 ```
-index.html    storefront (menu, veg/non-veg filters, search)
-admin.html    menu manager  → /admin.html
-config.js     brand name, phones, WhatsApp, address  ← edit this first
-menu.json     the menu data
-auth.json     your password-locked GitHub token (the admin page writes this)
-styles.css    storefront styles
-admin.css     admin styles
-app.js        storefront logic
-admin.js      admin logic (GitHub Contents API)
-images/       dish photos
+index.html        storefront (menu, veg/non-veg filters, search)
+admin.html        menu manager  → /admin.html
+config.js         brand name, phones, WhatsApp, address  ← edit this first
+menu.json         the menu data
+auth.json         your password-locked GitHub token (the manager writes this)
+styles.css        storefront styles
+admin.css         manager styles
+images/           dish photos
+
+js/
+  storefront.js   what the storefront does
+  admin.js        what the manager does
+  lib/
+    crypto.js     password lock (PBKDF2 → AES-GCM)
+    github.js     GitHub Contents API client
+    image.js      photo resizing before upload
+    format.js     prices, tel: and wa.me links
+    bytes.js      UTF-8-safe base64
+
+vendor/
+  alpine.esm.js   Alpine.js 3.17.1, committed on purpose (see below)
+
+tools/            dev only — never runs on the live site
+  check.mjs       pre-flight checks
+  *.test.mjs      tests
 ```
 
 ---
@@ -94,6 +109,47 @@ GitHub Pages redeploys, and the change is live in about a minute.
 - The manager works on a phone too — the edit form opens as a bottom sheet.
 - Edits are held locally until you press **Publish**, so you can make several
   changes and ship them in one go.
+
+## Working on the code
+
+The published site is plain static files — no build step, no bundler. Open
+`index.html` over a local server and it runs. The tooling below is for
+development only and never ships.
+
+```bash
+npm install     # jsdom, for the tests. One time.
+npm run check   # pre-flight checks — run this before every push
+npm test        # mounts both pages in a real DOM and drives them
+npm run serve   # http://localhost:8765
+```
+
+**`npm run check`** validates the things that have actually broken here before:
+every module loads, every import resolves, every `<script>` is `type="module"`,
+every name used in an Alpine expression exists on the component, the config is
+sane, every menu item is well formed, every photo is really in the repo, and no
+GitHub token has been committed by accident.
+
+**`npm test`** loads the real pages into jsdom, starts Alpine, and asserts on the
+result: that every price button is a working `wa.me` link with the right number,
+that a wrong password is refused, that a right one decrypts the token, that
+adding a dish and publishing writes the correct `menu.json`, and that the raw
+token never appears in anything committed.
+
+### Why it is built this way
+
+- **ES modules everywhere.** A classic `<script>` runs the moment the parser
+  reaches it, so it cannot see markup below itself, and a top-level `const` in
+  one never becomes a property of `window`. Both of those bit this project.
+  Modules wait for the document and have explicit imports; neither can recur.
+- **Alpine.js, not React or Vue.** Alpine needs no build step, which keeps the
+  promise that you can edit a file and push. Behaviour lives in the HTML next to
+  the element it belongs to, so a control and its handler cannot drift apart —
+  the previous hand-wired version had a single missing element silently disable
+  every button after it.
+- **Alpine is committed, not loaded from a CDN.** The manager must not stop
+  working because someone else's server is down.
+- **Logic is separated from the DOM.** `js/lib/*` are plain functions with no
+  page in them, so they can be tested directly.
 
 ## Security, honestly
 
