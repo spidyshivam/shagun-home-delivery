@@ -168,9 +168,14 @@
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   box-shadow: var(--shadow-lg);
   transform: translateY(102%);
-  transition: transform .3s cubic-bezier(.32,.72,.28,1);
+  /* A closed modal is still a full-size fixed box. Without these it stays
+     invisible but clickable, sitting on top of whatever is underneath and
+     swallowing every tap that lands on it. */
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform .3s cubic-bezier(.32,.72,.28,1), opacity .25s ease, visibility .3s;
 }
-.modal.open{ transform: translateY(0); }
+.modal.open{ transform: translateY(0); visibility: visible; pointer-events: auto; }
 @media (min-width: 640px){
   .modal{
     top: 50%; bottom: auto; border-radius: var(--r-lg); border-bottom: 1px solid var(--line);
@@ -270,8 +275,9 @@
   border-top: 1px solid var(--line);
   box-shadow: 0 -6px 24px rgba(60,42,18,.1);
   transform: translateY(110%); transition: transform .25s cubic-bezier(.32,.72,.28,1);
+  pointer-events: none;
 }
-.publish-bar.show{ transform: translateY(0); }
+.publish-bar.show{ transform: translateY(0); pointer-events: auto; }
 .publish-bar .wrap{ display: flex; align-items: center; gap: 12px; }
 .publish-bar .txt{ flex: 1; font-size: 13.5px; font-weight: 600; color: var(--ink); }
 .publish-bar .txt small{ display: block; font-weight: 500; color: var(--ink-faint); font-size: 12px; }
@@ -321,7 +327,7 @@
   background: var(--green-deep); color: var(--gold-soft);
   font-size: 13.5px; font-weight: 600; text-align: left;
   box-shadow: var(--shadow-lg);
-  opacity: 0; visibility: hidden;
+  opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity .2s ease, transform .24s cubic-bezier(.32,.72,.28,1), visibility .2s;
 }
 .toast.show{ opacity: 1; visibility: visible; transform: translate(-50%, 0); }

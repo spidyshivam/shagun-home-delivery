@@ -164,6 +164,43 @@ for (const [page, [modulePath, factoryName]] of Object.entries(COMPONENTS)) {
   }
 }
 
+/* ------------------------------------------------- interactive overlays
+
+   A fixed-position box that is only hidden with opacity stays clickable. It
+   then floats invisibly over the page and eats taps meant for what is
+   underneath — which is exactly how the edit sheet's buttons stopped
+   responding. Anything toggled by a state class must be inert when closed. */
+
+for (const sheet of ["styles.css", "admin.css"]) {
+  const css = read(sheet);
+  const rules = new Map();
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selector = m[1].trim().replace(/\s+/g, " ");
+    if (selector.startsWith("@") || selector.includes("%")) continue;
+    rules.set(selector, (rules.get(selector) || "") + m[2]);
+  }
+
+  for (const [selector, body] of rules) {
+    const state = selector.match(/^(\S+)\.(open|show|active)$/);
+    if (!state) continue;
+
+    const base = rules.get(state[1]);
+    if (!base || !/position:\s*fixed/.test(base)) continue;
+
+    const inert = /visibility:\s*hidden/.test(base) || /pointer-events:\s*none/.test(base);
+    if (!inert) {
+      fail(`${sheet}: "${state[1]}" is fixed-position and toggled by "${selector}", but is ` +
+           "still clickable when closed — add visibility:hidden or pointer-events:none");
+    }
+
+    const restored = /visibility:\s*visible/.test(body) || /pointer-events:\s*auto/.test(body);
+    if (inert && !restored) {
+      fail(`${sheet}: "${selector}" does not restore visibility/pointer-events, so the ` +
+           "element will never become interactive");
+    }
+  }
+}
+
 /* ----------------------------------------------------------------- config */
 
 const { CONFIG } = await import(pathToFileURL(join(ROOT, "config.js")));
