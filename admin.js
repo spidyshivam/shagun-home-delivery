@@ -14,7 +14,7 @@
   var KEY = "shd.key.v1";
   var API = "https://api.github.com";
 
-  var BUILD = "b5";
+  var BUILD = "b6";
 
   /* Errors used to vanish into the console, where nobody was looking. Any
      failure now paints a banner across the top of whatever screen is up. */
@@ -49,6 +49,16 @@
     var r = e.reason;
     showFatal("Promise error: " + ((r && r.message) || String(r)));
   });
+
+  /* Elements bind() could not find. One missing node used to abort the whole
+     function, leaving every control after it dead with no clue why. */
+  var missingNodes = [];
+
+  function on(sel, ev, fn, label) {
+    var el = $(sel);
+    if (!el) { missingNodes.push(sel); return; }
+    el.addEventListener(ev, label ? guard(label, fn) : fn);
+  }
 
   /* Wrap a click handler so a throw inside it is reported, not swallowed. */
   function guard(label, fn) {
@@ -795,24 +805,24 @@
 
   function bind() {
     // --- gate
-    $("#unlock").addEventListener("click", unlock);
-    $("#pw").addEventListener("keydown", function (e) {
+    on("#unlock", "click", unlock);
+    on("#pw", "keydown", function (e) {
       if (e.key === "Enter") unlock();
     });
 
-    $("#setupGo").addEventListener("click", runSetup);
-    $("#s-token").addEventListener("keydown", function (e) {
+    on("#setupGo", "click", runSetup);
+    on("#s-token", "keydown", function (e) {
       if (e.key === "Enter") runSetup();
     });
 
-    $("#forgot").addEventListener("click", function (e) {
+    on("#forgot", "click", function (e) {
       e.preventDefault();
       clearMsg("#gateMsg");
       setupMode("recovery");
       showPane("#paneSetup");
       $("#s-newpw").focus();
     });
-    $("#backToUnlock").addEventListener("click", function (e) {
+    on("#backToUnlock", "click", function (e) {
       e.preventDefault();
       clearMsg("#setupMsg");
       showPane("#paneUnlock");
@@ -820,18 +830,18 @@
     });
 
     // --- password / access settings
-    $("#openSettings").addEventListener("click", guard("Password panel", openSettings));
-    $("#setClose").addEventListener("click", closeSettings);
-    $("#setCancel").addEventListener("click", closeSettings);
-    $("#setScrim").addEventListener("click", closeSettings);
-    $("#setSave").addEventListener("click", saveSettings);
-    $("#signOut").addEventListener("click", function () {
+    on("#openSettings", "click", openSettings, "Password panel");
+    on("#setClose", "click", closeSettings);
+    on("#setCancel", "click", closeSettings);
+    on("#setScrim", "click", closeSettings);
+    on("#setSave", "click", saveSettings);
+    on("#signOut", "click", function () {
       if (isDirty() && !confirm("You have unpublished changes. Sign out and lose them?")) return;
       signOut();
     });
 
     // --- list actions
-    $("#rows").addEventListener("click", guard("Dish action", function (e) {
+    on("#rows", "click", function (e) {
       var btn = e.target.closest("[data-act]");
       if (!btn) return;
       var i = Number(btn.getAttribute("data-i"));
@@ -850,13 +860,13 @@
       var moved = state.items.splice(i, 1)[0];
       state.items.splice(to, 0, moved);
       render();
-    }));
+    }, "Dish action");
 
-    $("#addItem").addEventListener("click", guard("Add dish", function () { openModal(null); }));
+    on("#addItem", "click", function () { openModal(null); }, "Add dish");
 
     // --- publish bar
-    $("#publish").addEventListener("click", guard("Publish", publish));
-    $("#discard").addEventListener("click", function () {
+    on("#publish", "click", publish, "Publish");
+    on("#discard", "click", function () {
       if (!confirm("Discard all unpublished changes?")) return;
       state.items = JSON.parse(state.original);
       render();
@@ -864,10 +874,10 @@
     });
 
     // --- modal
-    $("#modalClose").addEventListener("click", closeModal);
-    $("#modalCancel").addEventListener("click", closeModal);
-    $("#modalScrim").addEventListener("click", closeModal);
-    $("#modalSave").addEventListener("click", guard("Save dish", saveItem));
+    on("#modalClose", "click", closeModal);
+    on("#modalCancel", "click", closeModal);
+    on("#modalScrim", "click", closeModal);
+    on("#modalSave", "click", saveItem, "Save dish");
 
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Escape") return;
@@ -875,9 +885,9 @@
       if ($("#modal").classList.contains("open")) closeModal();
     });
 
-    $("#m-type").addEventListener("change", syncSeg);
+    on("#m-type", "change", syncSeg);
 
-    $("#addVariant").addEventListener("click", function () {
+    on("#addVariant", "click", function () {
       var current = $$("#m-variants .vrow").map(function (row) {
         return { label: $(".vlabel", row).value, price: $(".vprice", row).value };
       });
@@ -885,7 +895,7 @@
       renderVariants(current);
     });
 
-    $("#m-variants").addEventListener("click", function (e) {
+    on("#m-variants", "click", function (e) {
       var btn = e.target.closest("[data-rmv]");
       if (!btn) return;
       var rows = $$("#m-variants .vrow");
@@ -893,12 +903,12 @@
       btn.closest(".vrow").remove();
     });
 
-    $("#pickImage").addEventListener("click", function () { $("#m-file").click(); });
-    $("#m-file").addEventListener("change", function (e) {
+    on("#pickImage", "click", function () { $("#m-file").click(); });
+    on("#m-file", "change", function (e) {
       handleImage(e.target.files[0]);
       e.target.value = "";
     });
-    $("#clearImage").addEventListener("click", function () {
+    on("#clearImage", "click", function () {
       state.draftImg = "";
       renderPreview();
       $("#imgStatus").textContent = "Photo removed from this dish.";
@@ -972,6 +982,11 @@
   } catch (err) {
     showFatal("Could not wire up the page: " + err.message +
               " — this usually means a cached copy; reload with Ctrl+Shift+R");
+  }
+  if (missingNodes.length) {
+    showFatal("These controls are missing from the page, so they will not respond: " +
+              missingNodes.join(", ") +
+              " — your browser is probably running a cached copy; reload with Ctrl+Shift+R");
   }
   boot();
 })();
