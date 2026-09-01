@@ -14,7 +14,7 @@
   var KEY = "shd.key.v1";
   var API = "https://api.github.com";
 
-  var BUILD = "b6";
+  var BUILD = "b7";
 
   /* Errors used to vanish into the console, where nobody was looking. Any
      failure now paints a banner across the top of whatever screen is up. */
@@ -32,13 +32,19 @@
       x.setAttribute("aria-label", "Dismiss");
       x.style.cssText = "position:absolute;top:6px;right:10px;background:none;border:0;" +
         "color:#fff;font-size:20px;line-height:1;cursor:pointer";
-      x.onclick = function () { bar.remove(); };
+      x.onclick = function () {
+        bar.remove();
+        try { document.body.style.paddingTop = ""; } catch (e) {}
+      };
       document.body.appendChild(bar);
       bar.appendChild(x);
       bar._text = document.createElement("span");
       bar.insertBefore(bar._text, x);
     }
     bar._text.textContent = text + "   [build " + BUILD + "]";
+    // the banner is fixed at the top; shove the page down so it cannot sit
+    // on top of buttons and swallow their clicks
+    try { document.body.style.paddingTop = (bar.offsetHeight || 44) + "px"; } catch (e) {}
   }
 
   window.addEventListener("error", function (e) {
