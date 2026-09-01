@@ -114,6 +114,29 @@
           "price": 200
         }
       ]
+    },
+    {
+      "id": "sdf",
+      "name": "sdf",
+      "desc": "sdf",
+      "type": "veg",
+      "image": "images/sdf-1788267853685.jpg",
+      "available": true,
+      "tag": "dsfasd",
+      "variants": [
+        {
+          "label": "Half Plate",
+          "price": 123
+        },
+        {
+          "label": "Full Plate",
+          "price": 1234
+        },
+        {
+          "label": "sdf",
+          "price": 34
+        }
+      ]
     }
   ]
 }
