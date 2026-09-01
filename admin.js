@@ -14,6 +14,21 @@
   var KEY = "shd.key.v1";
   var API = "https://api.github.com";
 
+  var BUILD = "b4";
+
+  /* Anything that throws before the UI is up would otherwise leave the page
+     sitting on "Checking…" with no explanation. Put the error on screen. */
+  window.addEventListener("error", function (e) {
+    var box = document.getElementById("bootMsg");
+    if (!box || box.className.indexOf("show") !== -1) return;
+    box.className = "msg show error";
+    box.innerHTML = "<b>The page hit an error while starting.</b><br>" +
+      String(e.message || "Unknown error") +
+      (e.lineno ? " (" + String(e.filename || "").split("/").pop() + ":" + e.lineno + ")" : "") +
+      "<br><br>If this mentions something that no longer exists, your browser is running " +
+      "a cached copy — reload with <b>Ctrl + Shift + R</b>.";
+  });
+
   var state = {
     token:    null,   // GitHub token, in memory only
     password: null,   // owner's password, in memory only — never stored
@@ -919,6 +934,19 @@
     });
   }
 
-  bind();
+  var stamp = document.getElementById("buildStamp");
+  if (stamp) stamp.textContent = "build " + BUILD;
+
+  // bind() failing must not stop boot() — otherwise the gate never appears.
+  try {
+    bind();
+  } catch (err) {
+    var box = document.getElementById("bootMsg");
+    if (box) {
+      box.className = "msg show error";
+      box.innerHTML = "<b>Could not wire up the page.</b><br>" + esc(err.message) +
+        "<br><br>This usually means a cached copy — reload with <b>Ctrl + Shift + R</b>.";
+    }
+  }
   boot();
 })();
