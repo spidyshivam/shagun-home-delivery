@@ -1,0 +1,119 @@
+{
+  "updatedAt": "2026-08-30",
+  "items": [
+    {
+      "id": "idli-sambhar",
+      "name": "Idli Sambhar",
+      "desc": "Soft steamed idlis served with hot sambhar & chutney",
+      "type": "veg",
+      "image": "images/idli-sambhar.jpg",
+      "available": true,
+      "tag": "",
+      "variants": [
+        {
+          "label": "Half Plate",
+          "price": 60
+        },
+        {
+          "label": "Full Plate",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "dahi-vada",
+      "name": "Dahi Vada",
+      "desc": "Soft lentil dumplings soaked in sweet & spicy curd",
+      "type": "veg",
+      "image": "images/dahi-vada.jpg",
+      "available": true,
+      "tag": "",
+      "variants": [
+        {
+          "label": "Half Plate",
+          "price": 60
+        },
+        {
+          "label": "Full Plate",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "vegetable-pasta",
+      "name": "Vegetable Pasta",
+      "desc": "Delicious pasta cooked with fresh veggies & herbs",
+      "type": "veg",
+      "image": "images/vegetable-pasta.jpg",
+      "available": true,
+      "tag": "",
+      "variants": [
+        {
+          "label": "Half Plate",
+          "price": 50
+        },
+        {
+          "label": "Full Plate",
+          "price": 100
+        }
+      ]
+    },
+    {
+      "id": "fried-rice",
+      "name": "Fried Rice",
+      "desc": "Flavorful aromatic rice tossed with crunchy vegetables",
+      "type": "veg",
+      "image": "images/fried-rice.jpg",
+      "available": true,
+      "tag": "",
+      "variants": [
+        {
+          "label": "Half Plate",
+          "price": 50
+        },
+        {
+          "label": "Full Plate",
+          "price": 100
+        }
+      ]
+    },
+    {
+      "id": "egg-curry",
+      "name": "Egg Curry",
+      "desc": "Boiled eggs simmered in a spicy onion-tomato masala",
+      "type": "nonveg",
+      "image": "images/egg-curry.jpg",
+      "available": true,
+      "tag": "",
+      "variants": [
+        {
+          "label": "Half Plate",
+          "price": 70
+        },
+        {
+          "label": "Full Plate",
+          "price": 130
+        }
+      ]
+    },
+    {
+      "id": "chicken-curry",
+      "name": "Chicken Curry",
+      "desc": "Tender chicken in a rich, slow-cooked curry gravy",
+      "type": "nonveg",
+      "image": "images/chicken-curry.jpg",
+      "available": true,
+      "tag": "",
+      "variants": [
+        {
+          "label": "Half Plate",
+          "price": 110
+        },
+        {
+          "label": "Full Plate",
+          "price": 200
+        }
+      ]
+    }
+  ]
+}
