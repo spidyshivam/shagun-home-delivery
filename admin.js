@@ -8,7 +8,7 @@
 (function () {
   "use strict";
 
-  var C   = window.CONFIG || {};
+  var C   = window.CONFIG || (typeof CONFIG !== "undefined" ? CONFIG : {});
   var GH  = C.github || {};
   var CUR = C.currency || "₹";
   var KEY = "shd.key.v1";

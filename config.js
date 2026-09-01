@@ -34,3 +34,8 @@ const CONFIG = {
     branch: "main"
   }
 };
+
+/* A top-level `const` in a classic script is a global *lexical* binding, not a
+   property of `window`. Hang it on `window` explicitly so the page scripts can
+   actually find it. */
+window.CONFIG = CONFIG;

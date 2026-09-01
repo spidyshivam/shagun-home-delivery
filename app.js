@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  var C   = window.CONFIG || {};
+  var C   = window.CONFIG || (typeof CONFIG !== "undefined" ? CONFIG : {});
   var CUR = C.currency || "₹";
 
   var state = { items: [], filter: "all", query: "" };
@@ -36,6 +36,7 @@
 
   function waHref(text) {
     var num = String(C.whatsapp || "").replace(/\D/g, "");
+    if (!num) console.error("config.js did not load — WhatsApp links have no number.");
     return "https://wa.me/" + num + (text ? "?text=" + encodeURIComponent(text) : "");
   }
 
