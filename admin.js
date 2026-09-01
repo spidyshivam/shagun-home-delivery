@@ -14,20 +14,49 @@
   var KEY = "shd.key.v1";
   var API = "https://api.github.com";
 
-  var BUILD = "b4";
+  var BUILD = "b5";
 
-  /* Anything that throws before the UI is up would otherwise leave the page
-     sitting on "Checking…" with no explanation. Put the error on screen. */
+  /* Errors used to vanish into the console, where nobody was looking. Any
+     failure now paints a banner across the top of whatever screen is up. */
+  function showFatal(text) {
+    var bar = document.getElementById("fatalBar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "fatalBar";
+      bar.style.cssText =
+        "position:fixed;left:0;right:0;top:0;z-index:9999;background:#8f2029;color:#fff;" +
+        "font:13px/1.5 ui-monospace,Menlo,monospace;padding:11px 40px 11px 14px;" +
+        "white-space:pre-wrap;box-shadow:0 2px 12px rgba(0,0,0,.35)";
+      var x = document.createElement("button");
+      x.textContent = "\u00d7";
+      x.setAttribute("aria-label", "Dismiss");
+      x.style.cssText = "position:absolute;top:6px;right:10px;background:none;border:0;" +
+        "color:#fff;font-size:20px;line-height:1;cursor:pointer";
+      x.onclick = function () { bar.remove(); };
+      document.body.appendChild(bar);
+      bar.appendChild(x);
+      bar._text = document.createElement("span");
+      bar.insertBefore(bar._text, x);
+    }
+    bar._text.textContent = text + "   [build " + BUILD + "]";
+  }
+
   window.addEventListener("error", function (e) {
-    var box = document.getElementById("bootMsg");
-    if (!box || box.className.indexOf("show") !== -1) return;
-    box.className = "msg show error";
-    box.innerHTML = "<b>The page hit an error while starting.</b><br>" +
-      String(e.message || "Unknown error") +
-      (e.lineno ? " (" + String(e.filename || "").split("/").pop() + ":" + e.lineno + ")" : "") +
-      "<br><br>If this mentions something that no longer exists, your browser is running " +
-      "a cached copy — reload with <b>Ctrl + Shift + R</b>.";
+    showFatal("Error: " + (e.message || "unknown") +
+      (e.lineno ? "  (" + String(e.filename || "").split("/").pop() + ":" + e.lineno + ")" : ""));
   });
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e.reason;
+    showFatal("Promise error: " + ((r && r.message) || String(r)));
+  });
+
+  /* Wrap a click handler so a throw inside it is reported, not swallowed. */
+  function guard(label, fn) {
+    return function (e) {
+      try { return fn.call(this, e); }
+      catch (err) { showFatal(label + " failed: " + err.message); throw err; }
+    };
+  }
 
   var state = {
     token:    null,   // GitHub token, in memory only
@@ -791,7 +820,7 @@
     });
 
     // --- password / access settings
-    $("#openSettings").addEventListener("click", openSettings);
+    $("#openSettings").addEventListener("click", guard("Password panel", openSettings));
     $("#setClose").addEventListener("click", closeSettings);
     $("#setCancel").addEventListener("click", closeSettings);
     $("#setScrim").addEventListener("click", closeSettings);
@@ -802,7 +831,7 @@
     });
 
     // --- list actions
-    $("#rows").addEventListener("click", function (e) {
+    $("#rows").addEventListener("click", guard("Dish action", function (e) {
       var btn = e.target.closest("[data-act]");
       if (!btn) return;
       var i = Number(btn.getAttribute("data-i"));
@@ -821,12 +850,12 @@
       var moved = state.items.splice(i, 1)[0];
       state.items.splice(to, 0, moved);
       render();
-    });
+    }));
 
-    $("#addItem").addEventListener("click", function () { openModal(null); });
+    $("#addItem").addEventListener("click", guard("Add dish", function () { openModal(null); }));
 
     // --- publish bar
-    $("#publish").addEventListener("click", publish);
+    $("#publish").addEventListener("click", guard("Publish", publish));
     $("#discard").addEventListener("click", function () {
       if (!confirm("Discard all unpublished changes?")) return;
       state.items = JSON.parse(state.original);
@@ -838,7 +867,7 @@
     $("#modalClose").addEventListener("click", closeModal);
     $("#modalCancel").addEventListener("click", closeModal);
     $("#modalScrim").addEventListener("click", closeModal);
-    $("#modalSave").addEventListener("click", saveItem);
+    $("#modalSave").addEventListener("click", guard("Save dish", saveItem));
 
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Escape") return;
@@ -941,12 +970,8 @@
   try {
     bind();
   } catch (err) {
-    var box = document.getElementById("bootMsg");
-    if (box) {
-      box.className = "msg show error";
-      box.innerHTML = "<b>Could not wire up the page.</b><br>" + esc(err.message) +
-        "<br><br>This usually means a cached copy — reload with <b>Ctrl + Shift + R</b>.";
-    }
+    showFatal("Could not wire up the page: " + err.message +
+              " — this usually means a cached copy; reload with Ctrl+Shift+R");
   }
   boot();
 })();
